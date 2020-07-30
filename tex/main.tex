@@ -12,6 +12,8 @@
 \usepackage{float}
 \usepackage{amssymb}
 \usepackage{adjustbox}
+\usepackage{caption}
+\usepackage{subcaption}
 \usepackage[a4paper,margin=1in,footskip=0.25in]{geometry}
 \newcommand{\xmod}[1]{\left(\bmod\ #1\right)}
 \newcommand{\ximplies}{\Rightarrow\,}
@@ -36,23 +38,62 @@ Prediction of urban growth from a sequence of satellite images requires not only
 
 In a GAN, a generator network receives the history frames and attempts to provide a realistic continuation to the clip, and a discriminator network attempts to determine whether the clips it receives are real or fake, assigning a probability to the image between 0 and 1 of how likely it is to be real. The two networks compete against one another, with the generator attempting to fool the discriminator into thinking that the generated output images are areal, while the discriminator attempts to pick apart real and fake images more accurately.
 
-\begin{minipage}[t]{\linewidth}
+\begin{figure}[H]
+    \caption{graph of the generative adversarial model}
     \centering
-    \adjustbox{valign=t}{\includegraphics[width=0.8\linewidth]{gan-graph.png}}
-\end{minipage}
+    \includegraphics[width=0.7\linewidth]{gan-graph.png}
+\end{figure}
+
+\clearpage
 
 The discriminator is a convolutional neural network image classifier that runs the clips through convolutional layers activated with ReLU, and then to fully connected layers to obtain a scalar prediction between 0 and 1. It operates on a multi-scale model, meaning that a 48 by 48 pixel square clip is downscaled to 6 by 6, 12 by 12, 24 by 24, and the original clip, and a prediction generated for each scale.
 
-\begin{minipage}[t]{\linewidth}
-    \centering
-    \adjustbox{valign=t}{\includegraphics[width=0.85\linewidth]{disc-graph.png}}
-\end{minipage}
-
 The generator is a fully convolutional image generator model that also operates with the same four-scale model. However, a significant difference from the discriminator is that the generator concatenates the upsampled output of each scale to the next one to strengthen the time dependency.
 
-\begin{minipage}[t]{\linewidth}
+\begin{figure}[H]
+    \caption{graph of the discriminator and generator models}
     \centering
-    \adjustbox{valign=t}{\includegraphics[width=0.8\linewidth]{gen-graph.png}}
-\end{minipage}
+    \includegraphics[width=1.0\linewidth]{disc-gen-graph.png}
+\end{figure}
+
+\clearpage
+
+\section{Loss functions}
+
+To mathematically define the loss functions used in training, we must first define the generator and discriminator models as functions,
+
+\begin{align*}
+    \mathrm{gen} &: \textrm{ images } \to \textrm{ images }\\
+    \mathrm{disc} &: \textrm{ images } \to [0, 1]
+\end{align*}
+
+\subsection{$\ell_p$ loss}
+
+We define the $\ell_p$ loss as,
+
+\begin{align*}
+    \ell_p(x, y) = |x - y|^p,\; p \in \big\{1, 2\big\}
+\end{align*}
+
+This loss represents either the absolute difference (if $p = 1$), or the absolute squared difference (if $p = 2$) between the generated images $x$ and the ground truth images $y$. This is the simplest metric for the accuracy of the generated images.
+
+\subsection{Adversarial loss}
+
+First, define the binary crossentropy loss as,
+
+\begin{align*}
+    \mathrm{bce}(y, y') = -\sum_i y_i\log(y_i') + (1-y_i)
+    \log(1-y_i')
+\end{align*}
+
+where $y$ represents the predicted labels given as output of the discriminator, and $y'$ represents the true labels assigned to the data.
+
+Next, we define the adversarial loss,
+
+\begin{align*}
+    \mathrm{adv}(x, y) =
+    \mathrm{bce}(\mathrm{disc}(x, y), 1) +
+    \mathrm{bce}(\mathrm{disc}(x, \mathrm{gen}(x)), 0)
+\end{align*}
 
 \end{document}
